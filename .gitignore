@@ -131,5 +131,8 @@ dmypy.json
 # data
 data/curated/
 
+# other people's work
+prelim_analysis_merchants_consumers.ipynb
+
 # OSX .DS_Store file
 .DS_Store
