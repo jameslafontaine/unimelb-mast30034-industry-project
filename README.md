@@ -23,10 +23,10 @@ In the process we will be answering the following 2 questions:
 1. What are the 100 best merchants according to our ranking system?
 2. What features or heuristics did we discover that greatly separated which merchants should and shouldn't be accepted?
 
-**Timeline:** The timeline is February 2021-August 2022 based on the transaction data currently available.
+**Timeline:** The timeline is February 2021-October 2022 based on the transaction data currently available.
 
 To run the pipeline, please visit the `scripts` directory and `notebooks` directory as instructed:
-1. `scripts/ETL.py`: Run with `python3 scripts/ETL.py`` from the root directory. This automatically extracts, transforms and loads the data into the ./data/curated/ directory.
+1. `scripts/ETL.py`: Run with `python3 scripts/ETL.py` from the root directory. This automatically extracts, transforms and loads the data into the `./data/curated/` directory.
 
 Note to groups: Make sure to read the `README.md` located in `./data/README.md` for details pertaining to the datasets.
 
