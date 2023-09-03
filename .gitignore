@@ -135,17 +135,17 @@ data/externaldataset/
 test.ipynb
 
 # other people's work
-prelim_data_analysis.ipynb
+#prelim_data_analysis.ipynb
 
-consumer_merchant_analysis.ipynb
+#consumer_merchant_analysis.ipynb
 
-transactions_cleaning.ipynb
+#transactions_cleaning.ipynb
 
-transactions_visualizations.ipynb
+#transactions_visualizations.ipynb
 
-download_2021_Census_Data.py
+#download_2021_Census_Data.py
 
-download_external.py
+#download_external.py
 
 # OSX .DS_Store file
 .DS_Store
