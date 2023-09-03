@@ -6,7 +6,6 @@ Run the command `pip install -r requirements.txt` in your terminal to install an
 Run the command `pip freeze > requirements.txt` in your terminal to create a new requirements.txt to push to the repository if you ever need to install more libraries.
 
 # Generic Buy Now, Pay Later Project README.md
-# MAST30034 Project 1 README.md
 |       Name        |  Student ID |
 | ----------------- | ----------- |
 | James La Fontaine | 1079860     |
