@@ -27,9 +27,9 @@ In the process we will be answering the following 2 questions:
 **Timeline:** The timeline is February 2021-August 2022 based on the transaction data currently available.
 
 To run the pipeline, please visit the `scripts` directory and `notebooks` directory as instructed:
-1. `scripts/example.py`: This downloads the data into the ./data/ directory.
+1. `scripts/ETL.py`: Run with `python3 scripts/ETL.py`` from the root directory. This automatically extracts, transforms and loads the data into the ./data/curated/ directory.
 
-Note to groups: Make sure to read the `README.md` located in `./data/README.md` for details.
+Note to groups: Make sure to read the `README.md` located in `./data/README.md` for details pertaining to the datasets.
 
 
 
