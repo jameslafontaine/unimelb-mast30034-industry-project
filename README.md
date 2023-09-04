@@ -1,6 +1,8 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/wNN69YNG)
 
 ## IMPORTANT
+If you get the error ModuleNotFoundError: No module named 'module_name', try changing python version on bottom right. 
+
 Run the command `pip install -r requirements.txt` in your terminal to install any python libraries required to run the code in this repository.
 
 Run the command `pip freeze > requirements.txt` in your terminal to create a new requirements.txt to push to the repository if you ever need to install more libraries.
@@ -9,10 +11,10 @@ Run the command `pip freeze > requirements.txt` in your terminal to create a new
 |       Name        |  Student ID |
 | ----------------- | ----------- |
 | James La Fontaine | 1079860     |
-| Dulan Wijeratne   | 1181873     |
-| | |
-| | |
-| | |
+| Jack Olivier 		| 1269795 	  |
+| Harry Fisher 		| 1082897	  |
+| Dulan Wijeratne	| 1181873	  |
+| Nivethan Iyer		| 1171632     |
 
 
 #####
@@ -29,6 +31,3 @@ To run the pipeline, please visit the `scripts` directory and `notebooks` direct
 1. `scripts/ETL.py`: Run with `python3 scripts/ETL.py` from the root directory. This automatically extracts, transforms and loads the data into the `./data/curated/` directory.
 
 Note to groups: Make sure to read the `README.md` located in `./data/README.md` for details pertaining to the datasets.
-
-
-
