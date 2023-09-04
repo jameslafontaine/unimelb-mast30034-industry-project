@@ -1,11 +1,10 @@
 ###################################################
 ## ETL Script for BNPL Industry Project Datasets ##
 ##          Author: James La Fontaine            ##
-##           Last Edited: 03/09/2023             ##
+##           Last Edited: 04/09/2023             ##
 ###################################################
 
 import openpyxl
-
 import pandas as pd
 import os
 from pyspark.sql import SparkSession, functions as F
@@ -28,48 +27,69 @@ spark = (
     .getOrCreate()
 )
 
+output_relative_dir = 'data/curated/'
+
+if not os.path.exists(output_relative_dir):
+    os.makedirs(output_relative_dir)
+    
+# now, for each type of data set we will need, we will create the paths
+for target_dir in ('consumer', 'merchant', 'transaction', 'sa2'): 
+    if not os.path.exists(output_relative_dir + target_dir):
+        os.makedirs(output_relative_dir + target_dir)
+
+
+output_relative_dir = 'data/nulls&missing_analysis/'
+
+if not os.path.exists(output_relative_dir):
+    os.makedirs(output_relative_dir)
+    
+# now, for each type of data set we will need, we will create the paths
+for target_dir in ('consumer', 'merchant', 'transaction', 'sa2'): 
+    if not os.path.exists(output_relative_dir + target_dir):
+        os.makedirs(output_relative_dir + target_dir)
 
 
 ################################
-## DOWNLOAD EXTERNAL DATASETS ##
+## DOWNLOAD EXTERNAL DATASETS ##############################################################
 ################################
+
+
 
 print("Downloading external datasets...")
 
 # Define the output directory where you want to save the downloaded and extracted files
-output_dir = 'data'
+output_relative_dir = 'data/'
 
-if not os.path.exists(output_dir):
-    print("Could not find directory")
-else:
-    os.makedirs(output_dir + "/externaldataset", exist_ok=True)
-    print("Download Start")
+if not os.path.exists(output_relative_dir):
+    os.makedirs(output_relative_dir)
     
-    # URL for the first dataset
-    url1 = "https://www.abs.gov.au/census/find-census-data/datapacks/download/2021_GCP_SA2_for_AUS_short-header.zip"
-    output_file1 = output_dir + "/externaldataset/2021_GCP_SA2_for_AUS_short-header.zip"
-    urlretrieve(url1, output_file1)
+if not os.path.exists(output_relative_dir + "externaldataset"):
+    os.makedirs(output_relative_dir + "externaldataset", exist_ok=True)
+        
     
-    # URL for the second dataset
-    url2 = "https://data.gov.au/data/dataset/6cd8989d-4aca-46b7-b93e-77befcffa0b6/resource/cb659d81-5bd2-41f5-a3d0-67257c9a5893/download/asgs2021codingindexs.zip"
-    output_file2 = output_dir + "/externaldataset/asgs2021codingindexs.zip"
-    urlretrieve(url2, output_file2)
+print("Download Start")
     
-    # URL for the third dataset
+# URL for the first dataset
+url1 = "https://www.abs.gov.au/census/find-census-data/datapacks/download/2021_GCP_SA2_for_AUS_short-header.zip"
+output_file1 = output_relative_dir + "externaldataset/2021_GCP_SA2_for_AUS_short-header.zip"
+urlretrieve(url1, output_file1)
     
-    url3 = "https://www.abs.gov.au/statistics/people/population/regional-population/2021-22/32180DS0003_2001-22r.xlsx"
-    output_file3 = output_dir + "/externaldataset/SA2_Populations_AUS.xlsx"
-    urlretrieve(url3, output_file3)
+# URL for the second dataset
+url2 = "https://data.gov.au/data/dataset/6cd8989d-4aca-46b7-b93e-77befcffa0b6/resource/cb659d81-5bd2-41f5-a3d0-67257c9a5893/download/asgs2021codingindexs.zip"
+output_file2 = output_relative_dir + "externaldataset/asgs2021codingindexs.zip"
+urlretrieve(url2, output_file2)
     
-    print("Download Complete")
+# URL for the third dataset
+    
+url3 = "https://www.abs.gov.au/statistics/people/population/regional-population/2021-22/32180DS0003_2001-22r.xlsx"
+output_file3 = output_relative_dir + "externaldataset/SA2_Populations_AUS.xlsx"
+urlretrieve(url3, output_file3)
+    
+print("Download complete.")
 
 # List of files to extract from the ZIP files
 files_to_extract1 = [
     "2021Census_G02_AUST_SA2.csv",
-    "2021Census_G33_AUST_SA2.csv",
-    "2021Census_G17A_AUST_SA2.csv",
-    "2021Census_G17B_AUST_SA2.csv",
-    "2021Census_G17C_AUST_SA2.csv",
 ]
 
 # file from the second dataset
@@ -101,11 +121,13 @@ with zipfile.ZipFile(zip_file_path2, 'r') as zip_ref:
             print(f"Extracted from ZIP 2: {file_name}")
         except KeyError:
             print(f"File not found in ZIP 2: {file_name}")
+    
+print("Extraction complete.")
+  
 
-print("Extraction completed.")
 
 ######################
-## LOAD IN DATASETS ##
+## LOAD IN DATASETS ##########################################################################
 ######################
 
 print("Loading in datasets...")
@@ -142,7 +164,7 @@ merch_tbl = spark.read.parquet(path)
 ######################################## EXTERNAL ########################################
 # 2021 census data CSVs
 
-path = 'data/externaldataset/2021 Census GCP Statistical Area 2 for AUS/*'
+path = 'data/externaldataset/2021 Census GCP Statistical Area 2 for AUS/2021Census_G02_AUST_SA2.csv'
 sa2_census = spark.read.csv(path, header=True)
 
 #========================================================================================#
@@ -182,7 +204,7 @@ path = 'data/externaldataset/2022 Locality to 2021 SA2 Coding Index.csv'
 sa2_to_postcode = spark.read.csv(path, header=True)
 
 ####################################################################
-## REMOVE USELESS COLUMNS, DATA TYPE CONVERSIONS, COLUMN RENAMING ##
+## REMOVE USELESS COLUMNS, DATA TYPE CONVERSIONS, COLUMN RENAMING ############################
 ####################################################################
 
 print("Removing useless columns, converting data types, renaming columns...")
@@ -249,6 +271,36 @@ merch_tbl.withColumnRenamed(
 
 # 2021 census data
 
+sa2_census = sa2_census.withColumn(
+    'sa2_code',
+    F.col('SA2_CODE_2021').cast('long')
+).withColumn(
+    'sa2_median_age',
+    F.col('Median_age_persons').cast('long')
+).withColumn(
+    'sa2_median_mortgage_repay_monthly',
+    F.col('Median_mortgage_repay_monthly').cast('long')
+).withColumn(
+    'sa2_median_tot_prsnl_inc_weekly',
+    F.col('Median_tot_prsnl_inc_weekly').cast('long')
+).withColumn(
+    'sa2_median_rent_weekly',
+    F.col('Median_rent_weekly').cast('long')
+).withColumn(
+    'sa2_median_tot_fam_inc_weekly',
+    F.col('Median_tot_fam_inc_weekly').cast('long')
+).withColumn(
+    'sa2_average_num_psns_per_bedroom',
+    F.col('Average_num_psns_per_bedroom').cast('double')
+).withColumn(
+    'sa2_median_tot_hhd_inc_weekly',
+    F.col('Median_tot_hhd_inc_weekly').cast('long')
+).withColumn(
+    'sa2_average_household_size',
+    F.col('Average_household_size').cast('double')
+)
+
+sa2_census = sa2_census.select(sa2_census.columns[9:])
 
 #========================================================================================#
 
@@ -291,7 +343,7 @@ sa2_to_postcode = sa2_to_postcode.toDF(*[c.lower() for c in sa2_to_postcode.colu
 
 
 ################################################
-## CLEANING, FEATURE ENGINEERING, AGGREGATION ##
+## CLEANING, FEATURE ENGINEERING, AGGREGATION ################################################
 ################################################
 
 print("Cleaning, feature engineering, aggregating...")
@@ -302,10 +354,12 @@ transactions_all = transactions_21_02_21_08.union(transactions_21_08_22_02).unio
 
 df = transactions_all
 
-# 1. Check for Null Values
+df.write.mode('overwrite').parquet("data/nulls&missing_analysis/transaction/transactions_all.parquet")
+
+# 1. Remove Null Values
 df = df.na.drop()
 
-# 2. Check for Duplicates
+# 2. Remove Duplicates
 df = df.dropDuplicates()
 df = df.dropDuplicates(['order_id'])
 
@@ -320,16 +374,19 @@ start_date = datetime.strptime("20210228", "%Y%m%d").date()
 end_date = datetime.strptime("20221026", "%Y%m%d").date()
 df = df.filter(F.col('order_datetime').between(start_date, end_date))
 
+
 transactions_all_clean = df.drop('order_id')
 
 ######################################## CONSUMER ########################################
 
 df = cust_user_det
 
-# 1. Check for Null Values
+df.write.mode('overwrite').parquet("data/nulls&missing_analysis/consumer/consumer_user_details.parquet")
+
+# 1. Remove Null Values
 df = df.na.drop()
 
-# 2. Check for Duplicates
+# 2. Remove Duplicates
 df = df.dropDuplicates()
 
 # 3. Validate consumer_id and user_id
@@ -341,10 +398,12 @@ cust_user_det_clean = df
 
 df = cust_tbl
 
-# 1. Check for Null Values
+df.write.mode('overwrite').parquet("data/nulls&missing_analysis/consumer/consumer_tbl.parquet")
+
+# 1. Remove Null Values
 df = df.na.drop()
 
-# 2. Check for Duplicates
+# 2. Remove Duplicates
 df = df.dropDuplicates()
 
 # 3. Validate consumer_id
@@ -368,10 +427,12 @@ cust_tbl_clean = df
 
 df = cust_fp
 
-# 1. Check for Null Values
+df.write.mode('overwrite').parquet("data/nulls&missing_analysis/consumer/consumer_fraud_probability.parquet")
+
+# 1. Remove Null Values
 df = df.na.drop()
 
-# 2. Check for Duplicates
+# 2. Remove Duplicates
 df = df.dropDuplicates()
 
 # 3. Validate user_id
@@ -428,10 +489,12 @@ merch_tbl_clean = merch_tbl_clean.drop('tags', 'sep_tags')
 
 df = merch_tbl_clean 
 
-# 1. Check for Null Values
+df.write.mode('overwrite').parquet("data/nulls&missing_analysis/merchant/merchant_tbl.parquet")
+
+# 1. Remove Null Values
 df = df.na.drop()
 
-# 2. Check for Duplicates
+# 2. Remove Duplicates
 df = df.dropDuplicates()
 
 # 3. Validate merchant_abn
@@ -457,10 +520,12 @@ merch_tbl_clean = df
 
 df = merch_fp
 
-# 1. Check for Null Values
+df.write.mode('overwrite').parquet("data/nulls&missing_analysis/merchant/merchant_fraud_probability.parquet")
+
+# 1. Remove Null Values
 df = df.na.drop()
 
-# 2. Check for Duplicates
+# 2. Remove Duplicates
 df = df.dropDuplicates()
 
 # 3. Validate merchant_abn
@@ -480,16 +545,58 @@ merch_fp_clean = df
 
 # 2021 census data CSVs
 
+df = sa2_census
+
+df.write.mode('overwrite').parquet("data/nulls&missing_analysis/sa2/sa2_census.parquet")
+
+# 1. Remove Null Values
+df = df.na.drop()
+
+# 2. Remove Duplicates
+df = df.dropDuplicates()
+
+# 3. Validate sa2_code
+df = df.filter(F.col('sa2_code') > 0)
+
+# 4. Validate median_age
+df = df.filter(F.col('sa2_median_age') >= 0)
+
+# 5. Validate median mortgage repay monthly
+df = df.filter(F.col('sa2_median_mortgage_repay_monthly') >= 0)
+
+# 6. Validate median total personal weekly income
+df = df.filter(F.col('sa2_median_tot_prsnl_inc_weekly') >= 0)
+
+# 7. Validate median weekly rent
+df = df.filter(F.col('sa2_median_rent_weekly') >= 0)
+
+# 8. Validate median total family weekly income
+df = df.filter(F.col('sa2_median_tot_fam_inc_weekly') >= 0)
+
+# 9. Validate average number of persons per bedroom
+df = df.filter(F.col('sa2_average_num_psns_per_bedroom') >= 0)
+
+# 10. Validate median total household weekly income
+df = df.filter(F.col('sa2_median_tot_hhd_inc_weekly') >= 0)
+
+# 11. Validate average household size
+df = df.filter(F.col('sa2_average_household_size') >= 0)
+
+sa2_census_clean = df
+
+
 #========================================================================================#
 
 # SA2 population data
 
 df = sa2_pops
 
-# 1. Check for Null Values
+df.write.mode('overwrite').parquet("data/nulls&missing_analysis/sa2/sa2_pops.parquet")
+
+# 1. Remove Null Values
 df = df.na.drop()
 
-# 2. Check for Duplicates
+# 2. Remove Duplicates
 df = df.dropDuplicates()
 
 # 3. Validate population
@@ -506,33 +613,22 @@ sa2_pops_clean = df
 
 df = sa2_to_postcode
 
-# 1. Check for Null Values
+df.write.mode('overwrite').parquet("data/nulls&missing_analysis/sa2/sa2_to_postcode.parquet")
+
+# 1. Remove Null Values
 df = df.na.drop()
 
-# 2. Check for Duplicates
+# 2. Remove Duplicates
 df = df.dropDuplicates()
 
 # No need to validate postcode as inner join will be performed with validated postcodes
 
-sa2_to_postcode_clean=df
+sa2_to_postcode_clean = df
 
 
 ######################################## AGGREGATION ########################################
 
 print("Aggregating data...")
-
-output_relative_dir = '../data/curated/'
-
-# check if it exists as it makedir will raise an error if it does exist
-if not os.path.exists(output_relative_dir):
-    os.makedirs(output_relative_dir)
-   
-
-# now, for each type of data set we will need, we will create the paths
-for target_dir in ('consumer', 'merchant'): # taxi_zones should already exist
-    if not os.path.exists(output_relative_dir + target_dir):
-        os.makedirs(output_relative_dir + target_dir)
-
 
 orig_combined = cust_tbl_clean.join(cust_user_det_clean, on='consumer_id', how='inner') \
 .join(transactions_all_clean, on='user_id', how ='inner') \
@@ -540,7 +636,17 @@ orig_combined = cust_tbl_clean.join(cust_user_det_clean, on='consumer_id', how='
 .join(merch_tbl_clean, on='merchant_abn', how='inner') \
 .join(merch_fp_clean, on=['merchant_abn', 'order_datetime'], how='left').na.fill(0)
 
-sa2_combined = sa2_to_postcode_clean.join(sa2_pops_clean, on='sa2_code', how='inner').withColumnRenamed('population_2021','sa2_population_2021')
+
+# add consumer to front of census stats before joining with consumer data
+new_column_name_list= ['sa2_code'] + ['consumer_' + col for col in sa2_census_clean.columns[1:]]
+
+sa2_census_clean = sa2_census_clean.toDF(*new_column_name_list)
+
+sa2_combined = sa2_to_postcode_clean.join(sa2_pops_clean, on='sa2_code', how='inner').withColumnRenamed('population_2021','sa2_population').join(sa2_census, on='sa2_code', how='inner')
+
+
+    
+sa2_combined = sa2_to_postcode_clean.join(sa2_pops_clean, on='sa2_code', how='inner').withColumnRenamed('population_2021','sa2_population').join(sa2_census, on='sa2_code', how='inner')
 
 all_combined = orig_combined.join(sa2_combined.withColumnRenamed('postcode','consumer_postcode'), on='consumer_postcode', how='inner')
 
