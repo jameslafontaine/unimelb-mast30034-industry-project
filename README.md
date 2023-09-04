@@ -9,7 +9,7 @@ Run the command `pip freeze > requirements.txt` in your terminal to create a new
 |       Name        |  Student ID |
 | ----------------- | ----------- |
 | James La Fontaine | 1079860     |
-| | |
+| Dulan Wijeratne   | 1181873     |
 | | |
 | | |
 | | |
