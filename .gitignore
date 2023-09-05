@@ -138,3 +138,5 @@ data/nulls&missing_analysis/
 
 # OSX .DS_Store file
 .DS_Store
+
+geopandas.ipynb

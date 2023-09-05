@@ -50,10 +50,9 @@ for target_dir in ('consumer', 'merchant', 'transaction', 'sa2'):
 
 
 ################################
-## DOWNLOAD EXTERNAL DATASETS ##############################################################
+## DOWNLOAD EXTERNAL DATASETS ################################################################
 ################################
-
-
+#region Download External Datasets
 
 print("Downloading external datasets...")
 
@@ -124,12 +123,12 @@ with zipfile.ZipFile(zip_file_path2, 'r') as zip_ref:
     
 print("Extraction complete.")
   
-
+# endregion
 
 ######################
 ## LOAD IN DATASETS ##########################################################################
 ######################
-
+#region Load in Datasets
 print("Loading in datasets...")
 
 ######################################## TRANSACTIONS ########################################
@@ -203,13 +202,16 @@ path = 'data/externaldataset/2022 Locality to 2021 SA2 Coding Index.csv'
 
 sa2_to_postcode = spark.read.csv(path, header=True)
 
+#endregion
+
 ####################################################################
 ## REMOVE USELESS COLUMNS, DATA TYPE CONVERSIONS, COLUMN RENAMING ############################
 ####################################################################
-
+#region Preprocessing Step 1
 print("Removing useless columns, converting data types, renaming columns...")
 
 ######################################## TRANSACTIONS ########################################
+
 
 
 ######################################## CONSUMER ########################################
@@ -341,10 +343,12 @@ sa2_to_postcode = sa2_to_postcode.select(['POSTCODE', 'SA2_MAINCODE_2021']).with
 
 sa2_to_postcode = sa2_to_postcode.toDF(*[c.lower() for c in sa2_to_postcode.columns])
 
+#endregion
 
 ################################################
 ## CLEANING, FEATURE ENGINEERING, AGGREGATION ################################################
 ################################################
+#region Preprocessing Step 2
 
 print("Cleaning, feature engineering, aggregating...")
 
@@ -679,5 +683,7 @@ all_combined = all_combined.withColumnRenamed(
 print("Saving to data/curated/...")
 
 all_combined.write.mode('overwrite').parquet("data/curated/all_data_combined.parquet")
+
+#endregion
 
 print("ETL Script Complete.")
