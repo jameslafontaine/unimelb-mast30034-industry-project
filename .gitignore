@@ -132,7 +132,7 @@ dmypy.json
 data/curated/
 data/externaldataset/
 data/nulls&missing_analysis/
-
+data/checkpoint
 
 
 
