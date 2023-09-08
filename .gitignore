@@ -138,3 +138,5 @@ data/checkpoint
 
 # OSX .DS_Store file
 .DS_Store
+
+geopandas.ipynb
