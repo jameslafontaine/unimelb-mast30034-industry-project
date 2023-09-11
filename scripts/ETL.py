@@ -1,7 +1,7 @@
 ###################################################
 ## ETL Script for BNPL Industry Project Datasets ##
 ##          Author: James La Fontaine            ##
-##           Last Edited: 04/09/2023             ##
+##           Last Edited: 07/09/2023             ##
 ###################################################
 
 import openpyxl
@@ -50,10 +50,9 @@ for target_dir in ('consumer', 'merchant', 'transaction', 'sa2'):
 
 
 ################################
-## DOWNLOAD EXTERNAL DATASETS ##############################################################
+## DOWNLOAD EXTERNAL DATASETS ################################################################
 ################################
-
-
+#region Download External Datasets
 
 print("Downloading external datasets...")
 
@@ -67,7 +66,7 @@ if not os.path.exists(output_relative_dir + "externaldataset"):
     os.makedirs(output_relative_dir + "externaldataset", exist_ok=True)
         
     
-print("Download Start")
+print("Download start")
     
 # URL for the first dataset
 url1 = "https://www.abs.gov.au/census/find-census-data/datapacks/download/2021_GCP_SA2_for_AUS_short-header.zip"
@@ -124,12 +123,12 @@ with zipfile.ZipFile(zip_file_path2, 'r') as zip_ref:
     
 print("Extraction complete.")
   
-
+# endregion
 
 ######################
 ## LOAD IN DATASETS ##########################################################################
 ######################
-
+#region Load in Datasets
 print("Loading in datasets...")
 
 ######################################## TRANSACTIONS ########################################
@@ -203,16 +202,21 @@ path = 'data/externaldataset/2022 Locality to 2021 SA2 Coding Index.csv'
 
 sa2_to_postcode = spark.read.csv(path, header=True)
 
+#endregion
+
 ####################################################################
 ## REMOVE USELESS COLUMNS, DATA TYPE CONVERSIONS, COLUMN RENAMING ############################
 ####################################################################
-
+#region Preprocessing Step 1
 print("Removing useless columns, converting data types, renaming columns...")
 
 ######################################## TRANSACTIONS ########################################
+#region Transactions
 
+#endregion
+######################################## CONSUMER ############################################
+#region Consumer
 
-######################################## CONSUMER ########################################
 cust_fp = \
 cust_fp.withColumn(
     'user_id',
@@ -266,8 +270,10 @@ merch_tbl.withColumnRenamed(
     'merchant_name'
 )
 
-
+#endregion
 ######################################## EXTERNAL ########################################
+
+#region External
 
 # 2021 census data
 
@@ -341,10 +347,14 @@ sa2_to_postcode = sa2_to_postcode.select(['POSTCODE', 'SA2_MAINCODE_2021']).with
 
 sa2_to_postcode = sa2_to_postcode.toDF(*[c.lower() for c in sa2_to_postcode.columns])
 
+#endregion External
+
+#endregion Preprocessing Step 1
 
 ################################################
 ## CLEANING, FEATURE ENGINEERING, AGGREGATION ################################################
 ################################################
+#region Preprocessing Step 2
 
 print("Cleaning, feature engineering, aggregating...")
 
@@ -368,6 +378,7 @@ df = df.filter((F.col('user_id') > 0) & (F.col('merchant_abn') > 0))
 
 # 4. Validate dollar value
 df = df.filter(F.col('dollar_value') > 0)
+df = df.withColumn('dollar_value', F.round(F.col('dollar_value'), 2))
 
 # 5. Validate order_datetime for the specified date range
 start_date = datetime.strptime("20210228", "%Y%m%d").date()
@@ -445,6 +456,7 @@ df = df.filter(F.col('order_datetime').between(start_date, end_date))
 
 # 5. Validate consumer fraud probability
 df = df.filter(F.col('consumer_fraud_probability_%').between(0, 100))
+df = df.withColumn('consumer_fraud_probability_%', F.round(F.col('consumer_fraud_probability_%'), 4))
 
 cust_fp_clean = df
 
@@ -487,6 +499,16 @@ merch_tbl_clean = merch_tbl_clean.withColumn("take_rate_%", clean_take_rate_udf(
 
 merch_tbl_clean = merch_tbl_clean.drop('tags', 'sep_tags')
 
+# Replace multiple spaces with a single space
+merch_tbl_clean = merch_tbl_clean.withColumn("words", F.regexp_replace(F.col("words"), "\\s+", " "))
+
+# Trim leading and trailing spaces
+merch_tbl_clean = merch_tbl_clean.withColumn("words", F.regexp_replace(F.col("words"), "^\\s+", ""))
+merch_tbl_clean = merch_tbl_clean.withColumn("words", F.regexp_replace(F.col("words"), "\\s+$", ""))
+
+# Ensure consistent casing
+merch_tbl_clean = merch_tbl_clean.withColumn('words', F.lower(F.col('words')))
+
 df = merch_tbl_clean 
 
 df.write.mode('overwrite').parquet("data/nulls&missing_analysis/merchant/merchant_tbl.parquet")
@@ -505,7 +527,7 @@ df = df.filter(F.col('merchant_name').rlike("[a-zA-Z][a-zA-Z ]+"))
 
 # 5. Validate words (SPELL CHECK?) # https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html#sklearn.feature_extraction.text.TfidfVectorizer)
                                    # https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html 
-#df = df.filter(F.col('words') in ['NT','ACT','SA','TAS','WA','QLD','VIC','NSW'])
+#df = df.filter(F.col('words').rlike("[a-zA-Z][a-zA-Z0-9 ]+"))
 
 # 6. Validate take_rate
 df = df.filter((F.col('take_rate_%').between(0, 100)))
@@ -538,6 +560,7 @@ df = df.filter(F.col('order_datetime').between(start_date, end_date))
 
 # 5. Validate merchant fraud probability
 df = df.filter(F.col('merchant_fraud_probability_%').between(0, 100))
+df = df.withColumn('merchant_fraud_probability_%', F.round(F.col('merchant_fraud_probability_%'), 4))
 
 merch_fp_clean = df
 
@@ -630,6 +653,7 @@ sa2_to_postcode_clean = df
 
 print("Aggregating data...")
 
+# Join the original datasets
 orig_combined = cust_tbl_clean.join(cust_user_det_clean, on='consumer_id', how='inner') \
 .join(transactions_all_clean, on='user_id', how ='inner') \
 .join(cust_fp_clean, on=['user_id', 'order_datetime'], how='left').na.fill(0) \
@@ -637,35 +661,36 @@ orig_combined = cust_tbl_clean.join(cust_user_det_clean, on='consumer_id', how='
 .join(merch_fp_clean, on=['merchant_abn', 'order_datetime'], how='left').na.fill(0)
 
 
-# add consumer to front of census stats before joining with consumer data
-new_column_name_list= ['sa2_code'] + ['consumer_' + col for col in sa2_census_clean.columns[1:]]
 
-sa2_census_clean = sa2_census_clean.toDF(*new_column_name_list)
+# Join the SA2 data
+sa2_combined = sa2_to_postcode_clean.join(sa2_pops_clean, on='sa2_code', how='inner').withColumnRenamed('population_2021','sa2_population').join(sa2_census_clean, on='sa2_code', how='inner')
 
-sa2_combined = sa2_to_postcode_clean.join(sa2_pops_clean, on='sa2_code', how='inner').withColumnRenamed('population_2021','sa2_population').join(sa2_census, on='sa2_code', how='inner')
+# Group SA2 statistics by postcodes by taking averages and medians
+
+postcode_combined = sa2_combined.groupBy("postcode") \
+    .agg(F.avg("sa2_population").alias("consumer_postcode_estimated_population"), \
+        F.median("sa2_median_age").alias("consumer_postcode_median_age"), \
+        F.median("sa2_median_mortgage_repay_monthly").alias("consumer_postcode_median_mortgage_repay_monthly"), \
+        F.median("sa2_median_tot_prsnl_inc_weekly").alias("consumer_postcode_median_totl_prsnal_inc_weekly"), \
+        F.median("sa2_median_rent_weekly").alias("consumer_postcode_median_rent_weekly"), \
+        F.median("sa2_median_tot_fam_inc_weekly").alias("consumer_postcode_median_tot_fam_inc_weekly"), \
+        F.avg("sa2_average_num_psns_per_bedroom").alias("consumer_postcode_avg_num_psns_per_bedroom"), \
+        F.median("sa2_median_tot_hhd_inc_weekly").alias("consumer_postcode_median_tot_hhd_inc_weekly"), \
+        F.avg("sa2_average_household_size").alias("consumer_postcode_avg_household_size")
+    ).withColumnRenamed('postcode', 'consumer_postcode')
 
 
-    
-sa2_combined = sa2_to_postcode_clean.join(sa2_pops_clean, on='sa2_code', how='inner').withColumnRenamed('population_2021','sa2_population').join(sa2_census, on='sa2_code', how='inner')
+postcode_combined = postcode_combined.select(*[F.round(c, 2).alias(c) for c in postcode_combined.columns])
 
-all_combined = orig_combined.join(sa2_combined.withColumnRenamed('postcode','consumer_postcode'), on='consumer_postcode', how='inner')
+postcode_combined = postcode_combined.withColumn("consumer_postcode_estimated_population", F.round(F.col("consumer_postcode_estimated_population")))
+
+# Combine everything together
+
+all_combined = orig_combined.join(postcode_combined.withColumnRenamed('postcode','consumer_postcode'), on='consumer_postcode', how='inner')
+
+# Last adjustments to column names
 
 all_combined = all_combined.withColumnRenamed(
-    'sa2_code',
-    'consumer_sa2_code'
-).withColumnRenamed(
-    'sa4_name',
-    'consumer_sa4_name'
-).withColumnRenamed(
-    'sa3_name',
-    'consumer_sa3_name'
-).withColumnRenamed(
-    'sa2_name',
-    'consumer_sa2_name'
-).withColumnRenamed(
-    'sa2_population_2021',
-    'consumer_sa2_pop_2021'
-).withColumnRenamed(
     'words',
     'merchant_description'
 ).withColumnRenamed(
@@ -674,10 +699,17 @@ all_combined = all_combined.withColumnRenamed(
 ).withColumnRenamed(
     'take_rate_%',
     'merchant_take_rate_%'
+).withColumnRenamed(
+    'dollar_value',
+    'transaction_dollar_value_$AUD'
 )
 
 print("Saving to data/curated/...")
 
 all_combined.write.mode('overwrite').parquet("data/curated/all_data_combined.parquet")
+
+#endregion
+
+spark.stop()
 
 print("ETL Script Complete.")

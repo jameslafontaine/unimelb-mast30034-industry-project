@@ -132,9 +132,12 @@ dmypy.json
 data/curated/
 data/externaldataset/
 data/nulls&missing_analysis/
-
+data/checkpoint
+data/insights
 
 
 
 # OSX .DS_Store file
 .DS_Store
+
+geopandas.ipynb
