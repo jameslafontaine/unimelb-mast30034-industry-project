@@ -499,6 +499,16 @@ merch_tbl_clean = merch_tbl_clean.withColumn("take_rate_%", clean_take_rate_udf(
 
 merch_tbl_clean = merch_tbl_clean.drop('tags', 'sep_tags')
 
+# Replace multiple spaces with a single space
+merch_tbl_clean = merch_tbl_clean.withColumn("words", F.regexp_replace(F.col("words"), "\\s+", " "))
+
+# Trim leading and trailing spaces
+merch_tbl_clean = merch_tbl_clean.withColumn("words", F.regexp_replace(F.col("words"), "^\\s+", ""))
+merch_tbl_clean = merch_tbl_clean.withColumn("words", F.regexp_replace(F.col("words"), "\\s+$", ""))
+
+# Ensure consistent casing
+merch_tbl_clean = merch_tbl_clean.withColumn('words', F.lower(F.col('words')))
+
 df = merch_tbl_clean 
 
 df.write.mode('overwrite').parquet("data/nulls&missing_analysis/merchant/merchant_tbl.parquet")
@@ -517,7 +527,7 @@ df = df.filter(F.col('merchant_name').rlike("[a-zA-Z][a-zA-Z ]+"))
 
 # 5. Validate words (SPELL CHECK?) # https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html#sklearn.feature_extraction.text.TfidfVectorizer)
                                    # https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html 
-#df = df.filter(F.col('words') in ['NT','ACT','SA','TAS','WA','QLD','VIC','NSW'])
+#df = df.filter(F.col('words').rlike("[a-zA-Z][a-zA-Z0-9 ]+"))
 
 # 6. Validate take_rate
 df = df.filter((F.col('take_rate_%').between(0, 100)))
