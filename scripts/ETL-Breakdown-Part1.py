@@ -3,9 +3,11 @@
 ##              Breakdown Part 1                 ##
 ##          Author: James La Fontaine            ##
 ##          Edited by: Dulan Wijeratne           ##
-##           Last Edited: 07/09/2023             ##
+##           Last Edited: 14/09/2023             ##
 ###################################################
 
+import io
+import requests
 import openpyxl
 import pandas as pd
 import os
@@ -58,7 +60,7 @@ for target_dir in ('consumer', 'merchant', 'transaction', 'sa2'):
 print("Downloading external datasets...")
 
 # Define the output directory where you want to save the downloaded and extracted files
-output_relative_dir = 'data/'
+output_relative_dir = 'data/raw/'
 
 if not os.path.exists(output_relative_dir):
     os.makedirs(output_relative_dir)
@@ -102,7 +104,7 @@ zip_file_path1 = output_file1
 zip_file_path2 = output_file2
 
 # Destination folder for extraction
-destination_folder = "data/externaldataset"
+destination_folder = "data/raw/externaldataset"
 
 # Extract files from the first ZIP file
 with zipfile.ZipFile(zip_file_path1, 'r') as zip_ref:
@@ -121,6 +123,18 @@ with zipfile.ZipFile(zip_file_path2, 'r') as zip_ref:
             print(f"Extracted from ZIP 2: {file_name}")
         except KeyError:
             print(f"File not found in ZIP 2: {file_name}")
+            
+# URL where the zipfile of the shapefiles are stored on the ABS website
+zip_file_url = "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/POA_2021_AUST_GDA94_SHP.zip"
+r = requests.get(zip_file_url)
+z = zipfile.ZipFile(io.BytesIO(r.content))
+
+# output directory, making sure it exists
+dir = "data/raw/externaldataset/postcode_shapefiles"
+os.makedirs(dir)
+
+# writing data into directory
+z.extractall(dir)
     
 print("Extraction complete.")
   
@@ -133,33 +147,33 @@ print("Extraction complete.")
 print("Loading in datasets...")
 
 ######################################## CONSUMER ########################################
-path = 'data/tables/consumer_fraud_probability.csv'
+path = 'data/raw/tables/consumer_fraud_probability.csv'
 cust_fp = spark.read.csv(path, header=True)
 
-path = 'data/tables/consumer_user_details.parquet'
+path = 'data/raw/tables/consumer_user_details.parquet'
 cust_user_det = spark.read.parquet(path)
 
-path = 'data/tables/tbl_consumer.csv'
+path = 'data/raw/tables/tbl_consumer.csv'
 cust_tbl = spark.read.csv(path, sep='|', header=True)
 
 ######################################## MERCHANT ########################################
-path = 'data/tables/merchant_fraud_probability.csv'
+path = 'data/raw/tables/merchant_fraud_probability.csv'
 merch_fp = spark.read.csv(path, header=True)
 
-path = 'data/tables/tbl_merchants.parquet'
+path = 'data/raw/tables/tbl_merchants.parquet'
 merch_tbl = spark.read.parquet(path)
 
 ######################################## EXTERNAL ########################################
 # 2021 census data CSVs
 
-path = 'data/externaldataset/2021 Census GCP Statistical Area 2 for AUS/2021Census_G02_AUST_SA2.csv'
+path = 'data/raw/externaldataset/2021 Census GCP Statistical Area 2 for AUS/2021Census_G02_AUST_SA2.csv'
 sa2_census = spark.read.csv(path, header=True)
 
 #========================================================================================#
 
 # SA2 population data
 
-path = 'data/externaldataset/SA2_Populations_AUS.xlsx'
+path = 'data/raw/externaldataset/SA2_Populations_AUS.xlsx'
 
 # Have to manually fix the dataframe as the formatting is messed up
 
@@ -187,7 +201,7 @@ sa2_pops = sa2_pops.rename(columns={'no.': 'population_2021'})
 
 # Locality to SA2 coding index CSV
 
-path = 'data/externaldataset/2022 Locality to 2021 SA2 Coding Index.csv'
+path = 'data/raw/externaldataset/2022 Locality to 2021 SA2 Coding Index.csv'
 
 sa2_to_postcode = spark.read.csv(path, header=True)
 

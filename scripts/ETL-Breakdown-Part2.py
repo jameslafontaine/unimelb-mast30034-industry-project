@@ -3,7 +3,7 @@
 ##              Breakdown Part 2                 ##
 ##          Author: James La Fontaine            ##
 ##          Edited by: Dulan Wijeratne           ##
-##           Last Edited: 07/09/2023             ##
+##           Last Edited: 14/09/2023             ##
 ###################################################
 
 import openpyxl
@@ -36,11 +36,11 @@ print("Reading in Data...")
 
 ##################################### TRANSACTIONS ########################################
 # 'transactions.parquet' files
-path = 'data/tables/transactions_20210228_20210827_snapshot'
+path = 'data/raw/tables/transactions_20210228_20210827_snapshot'
 transactions_21_02_21_08 = spark.read.parquet(path)
-path = 'data/tables/transactions_20210828_20220227_snapshot'
+path = 'data/raw/tables/transactions_20210828_20220227_snapshot'
 transactions_21_08_22_02 = spark.read.parquet(path)
-path = 'data/tables/transactions_20220228_20220828_snapshot'
+path = 'data/raw/tables/transactions_20220228_20220828_snapshot'
 transactions_22_02_22_08 = spark.read.parquet(path)
 
 ######################################## CONSUMER ########################################
