@@ -67,6 +67,9 @@ if not os.path.exists(output_relative_dir):
     
 if not os.path.exists(output_relative_dir + "externaldataset"):
     os.makedirs(output_relative_dir + "externaldataset", exist_ok=True)
+    
+if not os.path.exists(output_relative_dir + "externaldataset/postcode_shapefiles"):
+    os.makedirs(output_relative_dir + "externaldataset/postcode_shapefiles", exist_ok=True)
         
     
 print("Download Start")
@@ -129,9 +132,9 @@ zip_file_url = "https://www.abs.gov.au/statistics/standards/australian-statistic
 r = requests.get(zip_file_url)
 z = zipfile.ZipFile(io.BytesIO(r.content))
 
-# output directory, making sure it exists
 dir = "data/raw/externaldataset/postcode_shapefiles"
-os.makedirs(dir)
+
+print("Downloading and extracting shapefiles...")
 
 # writing data into directory
 z.extractall(dir)

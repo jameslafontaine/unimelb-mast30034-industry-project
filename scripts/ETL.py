@@ -66,6 +66,9 @@ if not os.path.exists(output_relative_dir):
     
 if not os.path.exists(output_relative_dir + "externaldataset"):
     os.makedirs(output_relative_dir + "externaldataset", exist_ok=True)
+    
+if not os.path.exists(output_relative_dir + "externaldataset/postcode_shapefiles"):
+    os.makedirs(output_relative_dir + "externaldataset/postcode_shapefiles", exist_ok=True)
         
     
 print("Download start")
@@ -129,9 +132,9 @@ zip_file_url = "https://www.abs.gov.au/statistics/standards/australian-statistic
 r = requests.get(zip_file_url)
 z = zipfile.ZipFile(io.BytesIO(r.content))
 
-# output directory, making sure it exists
 dir = "data/raw/externaldataset/postcode_shapefiles"
-os.makedirs(dir)
+
+print("Downloading and extracting shapefiles...")
 
 # writing data into directory
 z.extractall(dir)
@@ -552,6 +555,31 @@ df = df.filter(F.col('revenue_level').isin(['a', 'b', 'c', 'd', 'e']))
 
 
 merch_tbl_clean = df
+
+from pyspark.sql.types import StringType
+
+# Create the segment feature for each merchant
+
+tech_and_electronics = ["computer", "digital", "television", "telecom"]
+retail_and_novelty = ["newspaper", "novelty", "hobby", "shoe", "instruments", "bicycle", "craft","office"]
+garden_and_furnishings = ["florists", "furniture", "garden", "tent"]
+antiques_and_jewellery = ["galleries", "antique", "jewelry"]
+specialized_services = ["health", "motor", "opticians"]
+
+
+def segment(description):
+    for segment, keywords in [("tech_and_electronics", tech_and_electronics),
+                               ("retail_and_novelty", retail_and_novelty),
+                               ("garden_and_furnishings", garden_and_furnishings),
+                               ("antiques_and_jewellery", antiques_and_jewellery),
+                               ("specialized_services", specialized_services)]:
+        if any(keyword in description for keyword in keywords):
+            return segment
+    return "other"
+
+segment_udf = F.udf(segment, StringType())
+
+merch_tbl_clean = merch_tbl_clean.withColumn("segment", segment_udf(merch_tbl_clean.words))
 
 #========================================================================================#
 
