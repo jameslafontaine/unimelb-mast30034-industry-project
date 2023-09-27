@@ -3,7 +3,7 @@
 ##              Breakdown Part 2                 ##
 ##          Author: James La Fontaine            ##
 ##          Edited by: Dulan Wijeratne           ##
-##           Last Edited: 07/09/2023             ##
+##           Last Edited: 14/09/2023             ##
 ###################################################
 
 import openpyxl
@@ -36,11 +36,11 @@ print("Reading in Data...")
 
 ##################################### TRANSACTIONS ########################################
 # 'transactions.parquet' files
-path = 'data/tables/transactions_20210228_20210827_snapshot'
+path = 'data/raw/tables/transactions_20210228_20210827_snapshot'
 transactions_21_02_21_08 = spark.read.parquet(path)
-path = 'data/tables/transactions_20210828_20220227_snapshot'
+path = 'data/raw/tables/transactions_20210828_20220227_snapshot'
 transactions_21_08_22_02 = spark.read.parquet(path)
-path = 'data/tables/transactions_20220228_20220828_snapshot'
+path = 'data/raw/tables/transactions_20220228_20220828_snapshot'
 transactions_22_02_22_08 = spark.read.parquet(path)
 
 ######################################## CONSUMER ########################################
@@ -240,6 +240,31 @@ df = df.filter(F.col('revenue_level').isin(['a', 'b', 'c', 'd', 'e']))
 
 
 merch_tbl_clean = df
+
+from pyspark.sql.types import StringType
+
+# Create the segment feature for each merchant
+
+tech_and_electronics = ["computer", "digital", "television", "telecom"]
+retail_and_novelty = ["newspaper", "novelty", "hobby", "shoe", "instruments", "bicycle", "craft","office"]
+garden_and_furnishings = ["florists", "furniture", "garden", "tent"]
+antiques_and_jewellery = ["galleries", "antique", "jewelry"]
+specialized_services = ["health", "motor", "opticians"]
+
+
+def segment(description):
+    for segment, keywords in [("tech_and_electronics", tech_and_electronics),
+                               ("retail_and_novelty", retail_and_novelty),
+                               ("garden_and_furnishings", garden_and_furnishings),
+                               ("antiques_and_jewellery", antiques_and_jewellery),
+                               ("specialized_services", specialized_services)]:
+        if any(keyword in description for keyword in keywords):
+            return segment
+    return "other"
+
+segment_udf = F.udf(segment, StringType())
+
+merch_tbl_clean = merch_tbl_clean.withColumn("segment", segment_udf(merch_tbl_clean.words))
 
 #========================================================================================#
 

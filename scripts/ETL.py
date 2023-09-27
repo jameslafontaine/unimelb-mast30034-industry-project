@@ -1,9 +1,11 @@
 ###################################################
 ## ETL Script for BNPL Industry Project Datasets ##
 ##          Author: James La Fontaine            ##
-##           Last Edited: 07/09/2023             ##
+##           Last Edited: 14/09/2023             ##
 ###################################################
 
+import io
+import requests
 import openpyxl
 import pandas as pd
 import os
@@ -57,13 +59,16 @@ for target_dir in ('consumer', 'merchant', 'transaction', 'sa2'):
 print("Downloading external datasets...")
 
 # Define the output directory where you want to save the downloaded and extracted files
-output_relative_dir = 'data/'
+output_relative_dir = 'data/raw/'
 
 if not os.path.exists(output_relative_dir):
     os.makedirs(output_relative_dir)
     
 if not os.path.exists(output_relative_dir + "externaldataset"):
     os.makedirs(output_relative_dir + "externaldataset", exist_ok=True)
+    
+if not os.path.exists(output_relative_dir + "externaldataset/postcode_shapefiles"):
+    os.makedirs(output_relative_dir + "externaldataset/postcode_shapefiles", exist_ok=True)
         
     
 print("Download start")
@@ -101,7 +106,7 @@ zip_file_path1 = output_file1
 zip_file_path2 = output_file2
 
 # Destination folder for extraction
-destination_folder = "data/externaldataset"
+destination_folder = "data/raw/externaldataset"
 
 # Extract files from the first ZIP file
 with zipfile.ZipFile(zip_file_path1, 'r') as zip_ref:
@@ -120,6 +125,19 @@ with zipfile.ZipFile(zip_file_path2, 'r') as zip_ref:
             print(f"Extracted from ZIP 2: {file_name}")
         except KeyError:
             print(f"File not found in ZIP 2: {file_name}")
+            
+            
+# URL where the zipfile of the shapefiles are stored on the ABS website
+zip_file_url = "https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/POA_2021_AUST_GDA94_SHP.zip"
+r = requests.get(zip_file_url)
+z = zipfile.ZipFile(io.BytesIO(r.content))
+
+dir = "data/raw/externaldataset/postcode_shapefiles"
+
+print("Downloading and extracting shapefiles...")
+
+# writing data into directory
+z.extractall(dir)
     
 print("Extraction complete.")
   
@@ -134,43 +152,43 @@ print("Loading in datasets...")
 ######################################## TRANSACTIONS ########################################
 
 # 'transactions.parquet' files
-path = 'data/tables/transactions_20210228_20210827_snapshot'
+path = 'data/raw/tables/transactions_20210228_20210827_snapshot'
 transactions_21_02_21_08 = spark.read.parquet(path)
 
-path = 'data/tables/transactions_20210828_20220227_snapshot'
+path = 'data/raw/tables/transactions_20210828_20220227_snapshot'
 transactions_21_08_22_02 = spark.read.parquet(path)
 
-path = 'data/tables/transactions_20220228_20220828_snapshot'
+path = 'data/raw/tables/transactions_20220228_20220828_snapshot'
 transactions_22_02_22_08 = spark.read.parquet(path)
 
 ######################################## CONSUMER ########################################
-path = 'data/tables/consumer_fraud_probability.csv'
+path = 'data/raw/tables/consumer_fraud_probability.csv'
 cust_fp = spark.read.csv(path, header=True)
 
-path = 'data/tables/consumer_user_details.parquet'
+path = 'data/raw/tables/consumer_user_details.parquet'
 cust_user_det = spark.read.parquet(path)
 
-path = 'data/tables/tbl_consumer.csv'
+path = 'data/raw/tables/tbl_consumer.csv'
 cust_tbl = spark.read.csv(path, sep='|', header=True)
 
 ######################################## MERCHANT ########################################
-path = 'data/tables/merchant_fraud_probability.csv'
+path = 'data/raw/tables/merchant_fraud_probability.csv'
 merch_fp = spark.read.csv(path, header=True)
 
-path = 'data/tables/tbl_merchants.parquet'
+path = 'data/raw/tables/tbl_merchants.parquet'
 merch_tbl = spark.read.parquet(path)
 
 ######################################## EXTERNAL ########################################
 # 2021 census data CSVs
 
-path = 'data/externaldataset/2021 Census GCP Statistical Area 2 for AUS/2021Census_G02_AUST_SA2.csv'
+path = 'data/raw/externaldataset/2021 Census GCP Statistical Area 2 for AUS/2021Census_G02_AUST_SA2.csv'
 sa2_census = spark.read.csv(path, header=True)
 
 #========================================================================================#
 
 # SA2 population data
 
-path = 'data/externaldataset/SA2_Populations_AUS.xlsx'
+path = 'data/raw/externaldataset/SA2_Populations_AUS.xlsx'
 
 # Have to manually fix the dataframe as the formatting is messed up
 
@@ -198,7 +216,7 @@ sa2_pops = sa2_pops.rename(columns={'no.': 'population_2021'})
 
 # Locality to SA2 coding index CSV
 
-path = 'data/externaldataset/2022 Locality to 2021 SA2 Coding Index.csv'
+path = 'data/raw/externaldataset/2022 Locality to 2021 SA2 Coding Index.csv'
 
 sa2_to_postcode = spark.read.csv(path, header=True)
 
@@ -537,6 +555,31 @@ df = df.filter(F.col('revenue_level').isin(['a', 'b', 'c', 'd', 'e']))
 
 
 merch_tbl_clean = df
+
+from pyspark.sql.types import StringType
+
+# Create the segment feature for each merchant
+
+tech_and_electronics = ["computer", "digital", "television", "telecom"]
+retail_and_novelty = ["newspaper", "novelty", "hobby", "shoe", "instruments", "bicycle", "craft","office"]
+garden_and_furnishings = ["florists", "furniture", "garden", "tent"]
+antiques_and_jewellery = ["galleries", "antique", "jewelry"]
+specialized_services = ["health", "motor", "opticians"]
+
+
+def segment(description):
+    for segment, keywords in [("tech_and_electronics", tech_and_electronics),
+                               ("retail_and_novelty", retail_and_novelty),
+                               ("garden_and_furnishings", garden_and_furnishings),
+                               ("antiques_and_jewellery", antiques_and_jewellery),
+                               ("specialized_services", specialized_services)]:
+        if any(keyword in description for keyword in keywords):
+            return segment
+    return "other"
+
+segment_udf = F.udf(segment, StringType())
+
+merch_tbl_clean = merch_tbl_clean.withColumn("segment", segment_udf(merch_tbl_clean.words))
 
 #========================================================================================#
 
