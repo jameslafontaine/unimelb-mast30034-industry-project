@@ -130,11 +130,11 @@ dmypy.json
 
 # data
 data/curated/
-data/externaldataset/
 data/nulls&missing_analysis/
 data/checkpoint
 data/insights
 data/raw/externaldataset
+data/ranking_data.parquet
 
 
 
