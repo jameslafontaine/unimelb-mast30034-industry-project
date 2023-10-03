@@ -135,10 +135,11 @@ data/checkpoint
 data/insights
 data/raw/externaldataset
 data/ranking_data.parquet
-
+data/externaldataset
 
 
 # OSX .DS_Store file
 .DS_Store
 
 geopandas.ipynb
+data/externaldataset/2022 Locality to 2021 SA2 Coding Index.csv
