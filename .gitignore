@@ -130,15 +130,18 @@ dmypy.json
 
 # data
 data/curated/
-data/externaldataset/
 data/nulls&missing_analysis/
 data/checkpoint
 data/insights
 data/raw/externaldataset
-
+data/ranking_data_LR.parquet
+data/ranking_data_RFR.parquet
+data/ranking_data_XGB.parquet
+data/externaldataset
 
 
 # OSX .DS_Store file
 .DS_Store
 
 geopandas.ipynb
+data/externaldataset/2022 Locality to 2021 SA2 Coding Index.csv
