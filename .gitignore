@@ -134,7 +134,9 @@ data/nulls&missing_analysis/
 data/checkpoint
 data/insights
 data/raw/externaldataset
-data/ranking_data.parquet
+data/ranking_data_LR.parquet
+data/ranking_data_RFR.parquet
+data/ranking_data_XGB.parquet
 data/externaldataset
 
 

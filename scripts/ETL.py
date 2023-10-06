@@ -396,6 +396,7 @@ df = df.filter((F.col('user_id') > 0) & (F.col('merchant_abn') > 0))
 
 # 4. Validate dollar value
 df = df.filter(F.col('dollar_value') > 0)
+df = df.filter(F.col('dollar_value') < 2000)
 df = df.withColumn('dollar_value', F.round(F.col('dollar_value'), 2))
 
 # 5. Validate order_datetime for the specified date range
