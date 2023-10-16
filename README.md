@@ -28,6 +28,12 @@ In the process we will be answering the following 2 questions:
 **Timeline:** The timeline is February 2021-October 2022 based on the transaction data currently available.
 
 To run the pipeline, please visit the `scripts` directory and `notebooks` directory as instructed:
-1. `scripts/ETL.py`: Run with `python3 scripts/ETL.py` from the root directory. This automatically extracts, transforms and loads the data into the `./data/curated/` directory.
+1. `notebooks/analysis/preliminary/` notebooks perform the preliminary analysis we did at the start of the project.
+2. `scripts/ETL.py`: Run with `python3 scripts/ETL.py` from the root directory. This automatically extracts, transforms and loads the data into the `./data/curated/` directory. (The ETL-Breakdowns have the same content as the ETL script just split up into smaller sections).
+3. `notebooks/analysis/nulls&missing/Null_&_Missing_Analysis.ipynb` performs the null value and missing value analysis, but the actions we decided to take from this analysis were added to the ETL script.
+4. Run `notebooks/analysis/distribution_outlier/distribution_analysis.ipynb` then `outlier_removal.ipynb` to perform outlier analysis and removal.
+5. Run the notebooks in `notebooks/analysis/insights/` in the order listed within the README.md in that folder to generate insights, then run `feature_engineering.ipynb` to perform feature engineering.
+6. Run `notebooks/analysis/ranking_system/ranking_system.ipynb` to create the rankings and associated visualisations.
+
 
 Note to groups: Make sure to read the `README.md` located in `./data/README.md` for details pertaining to the datasets.
