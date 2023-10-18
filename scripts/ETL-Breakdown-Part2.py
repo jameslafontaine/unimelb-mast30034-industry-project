@@ -46,7 +46,7 @@ transactions_22_02_22_08 = spark.read.parquet(path)
 ######################################## CONSUMER ########################################
 cust_fp = spark.read.parquet("data/checkpoint/checkpoint1/cust_fp.parquet")
 cust_tbl = spark.read.parquet("data/checkpoint/checkpoint1/cust_tbl.parquet")
-cust_user_det = spark.read.parquet("data/tables/consumer_user_details.parquet")
+cust_user_det = spark.read.parquet("data/raw/tables/consumer_user_details.parquet")
 
 ######################################## MERCHANT ########################################
 merch_fp = spark.read.parquet("data/checkpoint/checkpoint1/merch_fp.parquet")
