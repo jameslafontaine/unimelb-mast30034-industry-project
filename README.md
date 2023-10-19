@@ -35,7 +35,7 @@ To run the pipeline, please visit the `scripts` directory and `notebooks` direct
 5. Run the notebooks in `notebooks/analysis/insights/` in the order listed within the README.md in that folder to generate insights, then run `feature_engineering.ipynb` to perform feature engineering.
 6. Run `notebooks/analysis/ranking_system/ranking_system.ipynb` to create the rankings and associated visualisations.
 
-Note that there is a summary of most of this process in `notebooks/analysis/summary.ipynb`
+Note that there is a summary of much of this process in `notebooks/summary.ipynb` alongside ours assumptions and limitations for this project.
 
 
 Note to groups: Make sure to read the `README.md` located in `./data/README.md` for details pertaining to the datasets.
