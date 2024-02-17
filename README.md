@@ -1,7 +1,6 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/wNN69YNG)
 
 ## IMPORTANT
-If you get the error ModuleNotFoundError: No module named 'module_name', try changing python version on bottom right. 
+If you get the error ModuleNotFoundError: No module named 'module_name', try changing python version on bottom right of VSCode. 
 
 Run the command `pip install -r requirements.txt` in your terminal to install any python libraries required to run the code in this repository.
 
